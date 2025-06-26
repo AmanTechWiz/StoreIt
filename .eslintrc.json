@@ -1,6 +1,7 @@
 {
   "extends": ["next/core-web-vitals", "next/typescript", "plugin:tailwindcss/recommended", "prettier" ],
   "rules": {
-    "no-undef": "off"
+    "no-undef": "off",
+    "@typescript-eslint/no-explicit-any": "off"
   }
 }

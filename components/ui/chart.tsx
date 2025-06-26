@@ -3,16 +3,25 @@
 import * as React from "react"
 import * as RechartsPrimitive from "recharts"
 
-import type {
-  TooltipProps,
-  TooltipPayload,
-  ValueType,
-  NameType,
-} from "recharts"
-
 import { cn } from "@/lib/utils"
 
 const THEMES = { light: "", dark: ".dark" } as const
+
+// Define these types locally since they're not exported in recharts 3.0
+export type ValueType = number | string | Array<number | string>
+export type NameType = number | string
+
+export interface TooltipPayload<TValue extends ValueType, TName extends NameType> {
+  name?: TName
+  value?: TValue
+  dataKey?: string | number
+  color?: string
+  fill?: string
+  stroke?: string
+  strokeDasharray?: number | string
+  payload?: any
+  [key: string]: any
+}
 
 export type ChartConfig = {
   [k: string]: {
@@ -86,13 +95,13 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
             ([theme, prefix]) => `
 ${prefix} [data-chart=${id}] {
 ${colorConfig
-  .map(([key, itemConfig]) => {
-    const color =
-      itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
-      itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
-  })
-  .join("\n")}
+                .map(([key, itemConfig]) => {
+                  const color =
+                    itemConfig.theme?.[theme as keyof typeof itemConfig.theme] ||
+                    itemConfig.color
+                  return color ? `  --color-${key}: ${color};` : null
+                })
+                .join("\n")}
 }
 `
           )
@@ -102,10 +111,15 @@ ${colorConfig
   )
 }
 
-type ChartTooltipContentProps = TooltipProps<ValueType, NameType> & {
+type ChartTooltipContentProps = {
+  active?: boolean
+  payload?: TooltipPayload<ValueType, NameType>[]
+  label?: any
+  labelFormatter?: (label: any, payload: TooltipPayload<ValueType, NameType>[]) => React.ReactNode
+  className?: string
+  indicator?: "line" | "dot" | "dashed"
   hideLabel?: boolean
   hideIndicator?: boolean
-  indicator?: "line" | "dot" | "dashed"
   nameKey?: string
   labelKey?: string
   labelClassName?: string
@@ -254,11 +268,17 @@ const ChartLegend = RechartsPrimitive.Legend
 
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<"div"> &
-    Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
-      hideIcon?: boolean
-      nameKey?: string
-    }
+  React.ComponentProps<"div"> & {
+    payload?: Array<{
+      value?: string
+      type?: string
+      color?: string
+      dataKey?: string | number
+    }>
+    verticalAlign?: "top" | "bottom"
+    hideIcon?: boolean
+    nameKey?: string
+  }
 >(({ className, hideIcon = false, payload, verticalAlign = "bottom", nameKey }, ref) => {
   const { config } = useChart()
 
@@ -301,15 +321,15 @@ ChartLegendContent.displayName = "ChartLegendContent"
 
 function getPayloadConfigFromPayload(
   config: ChartConfig,
-  payload: TooltipPayload<ValueType, NameType>,
+  payload: TooltipPayload<ValueType, NameType> | { dataKey?: string | number;[key: string]: any },
   key: string
 ) {
   if (typeof payload !== "object" || payload === null) return undefined
 
   const payloadPayload =
     "payload" in payload &&
-    typeof payload.payload === "object" &&
-    payload.payload !== null
+      typeof payload.payload === "object" &&
+      payload.payload !== null
       ? payload.payload
       : undefined
 

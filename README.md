@@ -1,4 +1,4 @@
-# 🗂️ Vaultix
+# 🗂️ StoreIt
 
 <div align="center">
   <img src="https://img.shields.io/badge/Next.js-15.3.4-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
